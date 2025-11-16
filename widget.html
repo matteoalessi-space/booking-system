@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Prenota la tua esperienza</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      line-height: 1.6;
+      background: #ffffff;
+    }
+
+    .widget-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .widget-header {
+      text-align: center;
+      padding: 32px 24px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #f1f1f1;
+    }
+
+    .widget-logo {
+      max-width: 200px;
+      height: auto;
+      margin-bottom: 24px;
+    }
+
+    .widget-header-image {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+    }
+
+    .widget-content {
+      padding: 32px 24px;
+    }
+
+    @media (max-width: 480px) {
+      .widget-content {
+        padding: 24px 16px;
+      }
+    }
+
+    .widget-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #1a1a1a;
+      letter-spacing: -0.02em;
+    }
+
+    @media (max-width: 480px) {
+      .widget-title {
+        font-size: 26px;
+      }
+    }
+
+    .widget-description {
+      margin-bottom: 32px;
+      line-height: 1.7;
+      color: #4a4a4a;
+      font-size: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      margin-top: 32px;
+      color: #1a1a1a;
+    }
+
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 480px) {
+      .time-slots {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+
+    .time-slot {
+      padding: 16px 12px;
+      border: 2px solid #e5e5e5;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 15px;
+      min-height: 70px;
+      background: #ffffff;
+      color: #1a1a1a;
+    }
+
+    @media (max-width: 480px) {
+      .time-slot {
+        padding: 18px 12px;
+        font-size: 16px;
+        min-height: 80px;
+      }
+    }
+
+    .time-slot-time {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 16px;
+    }
+
+    @media (max-width: 480px) {
+      .time-slot-time {
+        font-size: 17px;
+      }
+    }
+
+    .time-slot-capacity {
+      font-size: 12px;
+      color: #6b6b6b;
+      margin-top: 4px;
+    }
+
+    .time-slot:hover:not(.disabled) {
+      border-color: #1a1a1a;
+      background: #fafafa;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .time-slot.selected {
+      background: #1a1a1a;
+      color: #ffffff;
+      border-color: #1a1a1a;
+    }
+
+    .time-slot.selected .time-slot-capacity {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .time-slot.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      background: #f9f9f9;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      font-size: 15px;
+      color: #1a1a1a;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e5e5;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      background: #ffffff;
+      color: #1a1a1a;
+    }
+
+    @media (max-width: 480px) {
+      .form-input,
+      .form-select,
+      .form-textarea {
+        padding: 16px;
+        font-size: 16px;
+      }
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #1a1a1a;
+      box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-checkbox {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .booking-button {
+      width: 100%;
+      padding: 18px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 32px;
+      background: #1a1a1a;
+      color: #ffffff;
+      letter-spacing: 0.01em;
+    }
+
+    @media (max-width: 480px) {
+      .booking-button {
+        padding: 20px 24px;
+        font-size: 18px;
+        border-radius: 12px;
+      }
+    }
+
+    .booking-button:hover:not(:disabled) {
+      background: #2a2a2a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(26, 26, 26, 0.15);
+    }
+
+    .booking-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .booking-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .loading,
+    .error,
+    .success {
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .loading {
+      background: #f9f9f9;
+      color: #4a4a4a;
+    }
+
+    .error {
+      background: #fff5f5;
+      color: #c53030;
+      border: 1px solid #feb2b2;
+    }
+
+    .success {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+
+    .success h2 {
+      font-size: 20px;
+      margin-bottom: 12px;
+      color: #166534;
+    }
+
+    .success p {
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    .date-picker {
+      margin-bottom: 32px;
+    }
+
+    .capacity-info {
+      font-size: 13px;
+      color: #6b6b6b;
+    }
+
+    .required-mark {
+      color: #dc2626;
+      margin-left: 2px;
+    }
+
+    .variant-selector {
+      margin-bottom: 32px;
+    }
+
+    .variant-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .variant-option {
+      border: 2px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #ffffff;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .variant-option:hover {
+      border-color: #1a1a1a;
+      background: #fafafa;
+    }
+
+    .variant-option input[type="radio"] {
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .variant-option input[type="radio"]:checked + label {
+      color: #1a1a1a;
+    }
+
+    .variant-option:has(input[type="radio"]:checked) {
+      border-color: #1a1a1a;
+      background: #fafafa;
+    }
+
+    .variant-option label {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .variant-details {
+      font-size: 14px;
+      color: #6b6b6b;
+    }
+  </style>
+</head>
+<body>
+  <div id="widget" class="widget-container"></div>
+
+  <script type="module">
+    const params = new URLSearchParams(window.location.search);
+    const activityId = params.get('activityId') || params.get('activity_id');
+    const variantId = params.get('variantId') || params.get('variant_id');
+
+    const supabaseUrl = 'https://yryfcvopmbseyrnghsft.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyeWZjdm9wbWJzZXlybmdoc2Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2Nzc4OTEsImV4cCI6MjA3ODI1Mzg5MX0.l8P9KMifqe8NvWaLFmiaJk-J9qSHysUSl23hLLN8FF8';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    let activity = null;
+    let activityVariants = [];
+    let workingHours = [];
+    let formFields = [];
+    let selectedVariant = null;
+    let selectedDate = null;
+    let selectedSlot = null;
+    let currentLang = 'it';
+
+    const widget = document.getElementById('widget');
+
+    const translations = {
+      it: {
+        loading: 'Caricamento...',
+        notFound: 'Attività non trovata o non disponibile',
+        loadError: 'Impossibile caricare il widget di prenotazione',
+        selectOption: 'Seleziona Opzione',
+        selectDate: 'Seleziona Data',
+        selectTime: 'Seleziona Orario',
+        yourInfo: 'I Tuoi Dati',
+        name: 'Nome e Cognome',
+        email: 'Email',
+        phone: 'Telefono',
+        numPeople: 'Numero di Persone',
+        notes: 'Note Aggiuntive',
+        bookNow: 'Prenota Ora',
+        addToCart: 'Aggiungi al Carrello',
+        required: '*',
+        spotsLeft: 'posti disponibili',
+        person: 'persona',
+        people: 'persone',
+        duration: 'durata',
+        minutes: 'minuti',
+        bookingConfirmed: 'Prenotazione Confermata!',
+        bookingConfirmedMsg: 'La tua prenotazione per {activity} il {date} alle {time} è stata confermata.',
+        confirmationEmail: 'Una email di conferma verrà inviata a {email}',
+        addedToCart: 'Aggiunto al Carrello!',
+        addedToCartMsg: 'La tua prenotazione per {activity} il {date} alle {time} è stata aggiunta al carrello.',
+        proceedCheckout: 'Procedi al checkout per confermare la prenotazione.',
+        viewCart: 'Visualizza Carrello',
+        bookingFailed: 'Impossibile creare la prenotazione. Riprova.',
+        fullySold: 'Tutto esaurito',
+        closed: 'Chiuso',
+        privacyPolicy: 'Privacy Policy',
+        privacyAccept: 'Ho letto e accetto la',
+        marketingConsent: 'Consenso Marketing',
+        marketingQuestion: 'Desideri ricevere comunicazioni promozionali e aggiornamenti?',
+        marketingYes: 'Sì, acconsento',
+        marketingNo: 'No, non acconsento',
+        waiver: 'Liberatoria',
+        waiverDisclaimer: 'Confermando la prenotazione, dichiari di aver letto e accettato la nostra'
+      },
+      en: {
+        loading: 'Loading...',
+        notFound: 'Activity not found or not available',
+        loadError: 'Failed to load booking widget',
+        selectOption: 'Select Option',
+        selectDate: 'Select Date',
+        selectTime: 'Select Time',
+        yourInfo: 'Your Information',
+        name: 'Name',
+        email: 'Email',
+        phone: 'Phone',
+        numPeople: 'Number of People',
+        notes: 'Additional Notes',
+        bookNow: 'Book Now',
+        addToCart: 'Add to Cart',
+        required: '*',
+        spotsLeft: 'spots left',
+        person: 'person',
+        people: 'people',
+        duration: 'duration',
+        minutes: 'minutes',
+        bookingConfirmed: 'Booking Confirmed!',
+        bookingConfirmedMsg: 'Your booking for {activity} on {date} at {time} has been confirmed.',
+        confirmationEmail: 'A confirmation email will be sent to {email}',
+        addedToCart: 'Added to Cart!',
+        addedToCartMsg: 'Your booking for {activity} on {date} at {time} has been added to your cart.',
+        proceedCheckout: 'Please proceed to checkout to confirm your booking.',
+        viewCart: 'View Cart',
+        bookingFailed: 'Failed to create booking. Please try again.',
+        fullySold: 'Fully Booked',
+        closed: 'Closed',
+        privacyPolicy: 'Privacy Policy',
+        privacyAccept: 'I have read and accept the',
+        marketingConsent: 'Marketing Consent',
+        marketingQuestion: 'Would you like to receive promotional communications and updates?',
+        marketingYes: 'Yes, I consent',
+        marketingNo: 'No, I do not consent',
+        waiver: 'Waiver',
+        waiverDisclaimer: 'By confirming the booking, you confirm that you have read and agreed to our'
+      }
+    };
+
+    function detectLanguage() {
+      if (typeof window.Shopify !== 'undefined' && window.Shopify.locale) {
+        return window.Shopify.locale.toLowerCase().substring(0, 2);
+      }
+      const urlLang = params.get('lang') || params.get('language');
+      if (urlLang) return urlLang.toLowerCase().substring(0, 2);
+
+      const htmlLang = document.documentElement.lang;
+      if (htmlLang) return htmlLang.toLowerCase().substring(0, 2);
+
+      const browserLang = navigator.language || navigator.userLanguage;
+      return browserLang.toLowerCase().substring(0, 2);
+    }
+
+    function t(key) {
+      return translations[currentLang]?.[key] || translations['it'][key] || key;
+    }
+
+    async function init() {
+      try {
+        const detectedLang = detectLanguage();
+        if (translations[detectedLang]) {
+          currentLang = detectedLang;
+        }
+
+        showLoading();
+
+        if (activityId) {
+          const { data } = await supabase
+            .from('activities')
+            .select('*')
+            .eq('id', activityId)
+            .eq('is_active', true)
+            .maybeSingle();
+          activity = data;
+        } else if (variantId) {
+          const { data } = await supabase
+            .from('activities')
+            .select('*')
+            .eq('shopify_variant_id', variantId)
+            .eq('is_active', true)
+            .maybeSingle();
+          activity = data;
+        }
+
+        if (!activity) {
+          showError(t('notFound'));
+          return;
+        }
+
+        const [hoursRes, fieldsRes, variantsRes] = await Promise.all([
+          supabase.from('working_hours').select('*').order('day_of_week'),
+          supabase
+            .from('booking_form_fields')
+            .select('*')
+            .eq('activity_id', activity.id)
+            .order('order_position'),
+          supabase
+            .from('activity_variants')
+            .select('*')
+            .eq('activity_id', activity.id)
+            .eq('is_active', true)
+            .order('order_position'),
+        ]);
+
+        workingHours = hoursRes.data || [];
+        formFields = fieldsRes.data || [];
+        activityVariants = variantsRes.data || [];
+
+        applyCustomStyling();
+        renderWidget();
+      } catch (err) {
+        showError(t('loadError'));
+      }
+    }
+
+    function applyCustomStyling() {
+      const container = widget;
+      container.style.backgroundColor = activity.widget_background_color;
+      container.style.color = activity.widget_text_color;
+    }
+
+    function showLoading() {
+      widget.innerHTML = `<div class="loading">${t('loading')}</div>`;
+    }
+
+    function showError(message) {
+      widget.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showSuccess(message) {
+      widget.innerHTML = `<div class="success">${message}</div>`;
+    }
+
+    function renderWidget() {
+      const title = activity.widget_title || activity.name;
+      const description = activity.widget_description || '';
+      const logoUrl = 'https://cdn.shopify.com/s/files/1/0893/0938/0949/files/logo_space_400x200_010a9ce5-631f-43bf-886d-59fd110a5d61.png?v=1728652279';
+
+      widget.innerHTML = `
+        <div class="widget-header">
+          <img src="${logoUrl}" class="widget-logo" alt="Logo">
+        </div>
+        ${activity.widget_header_image ? `<img src="${activity.widget_header_image}" class="widget-header-image" alt="${title}">` : ''}
+        <div class="widget-content">
+          <h1 class="widget-title">${title}</h1>
+          ${description ? `<p class="widget-description">${description}</p>` : ''}
+
+          ${activityVariants.length > 0 ? `
+            <div class="variant-selector">
+              <label class="form-label">${t('selectOption')} <span class="required-mark">${t('required')}</span></label>
+              <div id="variant-options" class="variant-options"></div>
+            </div>
+          ` : ''}
+
+          <div class="date-picker">
+            <label class="form-label">${t('selectDate')} <span class="required-mark">${t('required')}</span></label>
+            <input type="date" id="date-input" class="form-input" min="${new Date().toISOString().split('T')[0]}" />
+          </div>
+
+          <div id="time-slots-container"></div>
+          <div id="booking-form"></div>
+        </div>
+      `;
+
+      if (activityVariants.length > 0) {
+        renderVariantOptions();
+      } else {
+        selectedVariant = {
+          duration_minutes: activity.duration_minutes,
+          max_capacity: activity.max_capacity
+        };
+      }
+
+      document.getElementById('date-input').addEventListener('change', handleDateChange);
+    }
+
+    function renderVariantOptions() {
+      const container = document.getElementById('variant-options');
+
+      container.innerHTML = activityVariants.map((variant, index) => `
+        <label class="variant-option" data-variant-index="${index}">
+          <input type="radio" id="variant-${variant.id}" name="variant" value="${variant.id}" ${index === 0 ? 'checked' : ''}>
+          <div>
+            <strong>${variant.name}</strong>
+            <div class="variant-details">
+              ${variant.duration_minutes} minutes • Max ${variant.max_capacity} people
+              ${variant.price ? ` • €${parseFloat(variant.price).toFixed(2)}` : ''}
+            </div>
+          </div>
+        </label>
+      `).join('');
+
+      selectedVariant = activityVariants[0];
+
+      container.querySelectorAll('.variant-option').forEach((option, index) => {
+        option.addEventListener('click', () => {
+          const radio = option.querySelector('input[type="radio"]');
+          if (radio) {
+            radio.checked = true;
+            selectedVariant = activityVariants[index];
+            selectedDate = null;
+            selectedSlot = null;
+            document.getElementById('date-input').value = '';
+            document.getElementById('time-slots-container').innerHTML = '';
+            document.getElementById('booking-form').innerHTML = '';
+          }
+        });
+      });
+    }
+
+    async function handleDateChange(e) {
+      selectedDate = e.target.value;
+      selectedSlot = null;
+      await renderTimeSlots();
+    }
+
+    async function renderTimeSlots() {
+      const container = document.getElementById('time-slots-container');
+
+      if (!selectedDate) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
+
+      const { data: specificDateOverride } = await supabase
+        .from('working_hours_date_overrides')
+        .select('*')
+        .eq('specific_date', selectedDate)
+        .maybeSingle();
+
+      let hours;
+      if (specificDateOverride) {
+        hours = {
+          start_time: specificDateOverride.start_time,
+          end_time: specificDateOverride.end_time,
+          is_active: specificDateOverride.is_open,
+        };
+      } else {
+        const { data: activityOverride } = await supabase
+          .from('activity_availability_overrides')
+          .select('*')
+          .eq('activity_id', activity.id)
+          .eq('day_of_week', dayOfWeek)
+          .is('specific_date', null)
+          .maybeSingle();
+
+        if (activityOverride) {
+          hours = {
+            day_of_week: activityOverride.day_of_week,
+            start_time: activityOverride.start_time,
+            end_time: activityOverride.end_time,
+            is_active: activityOverride.is_available,
+          };
+        } else {
+          hours = workingHours.find(h => h.day_of_week === dayOfWeek);
+        }
+      }
+
+      if (!hours || !hours.is_active) {
+        container.innerHTML = `<p class="error">${t('closed')}</p>`;
+        return;
+      }
+
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('start_time, number_of_people')
+        .eq('activity_id', activity.id)
+        .eq('booking_date', selectedDate)
+        .eq('status', 'confirmed');
+
+      const duration = selectedVariant ? selectedVariant.duration_minutes : activity.duration_minutes;
+      const capacity = selectedVariant ? selectedVariant.max_capacity : activity.max_capacity;
+
+      const slots = generateTimeSlots(hours.start_time, hours.end_time, duration);
+      const slotsWithCapacity = slots.map(slot => {
+        const booked = existingBookings
+          ?.filter(b => b.start_time === slot.start)
+          .reduce((sum, b) => sum + b.number_of_people, 0) || 0;
+        return {
+          ...slot,
+          available: capacity - booked,
+          booked,
+        };
+      });
+
+      container.innerHTML = `
+        <h3 class="section-title">${t('selectTime')}</h3>
+        <div class="time-slots">
+          ${slotsWithCapacity.map(slot => `
+            <div
+              class="time-slot ${slot.available <= 0 ? 'disabled' : ''} ${selectedSlot?.start === slot.start ? 'selected' : ''}"
+              onclick="selectSlot('${slot.start}', '${slot.end}', ${slot.available})"
+              ${slot.available <= 0 ? 'disabled' : ''}
+            >
+              <div class="time-slot-time">${slot.start}</div>
+              <div class="time-slot-capacity">${slot.available <= 0 ? t('fullySold') : slot.available + ' ' + t('spotsLeft')}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      window.selectSlot = (start, end, available) => {
+        if (available <= 0) return;
+        selectedSlot = { start, end, available };
+        renderTimeSlots();
+        renderBookingForm();
+      };
+    }
+
+    function generateTimeSlots(startTime, endTime, durationMinutes) {
+      const slots = [];
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+
+      let current = startHour * 60 + startMin;
+      const end = endHour * 60 + endMin;
+
+      while (current + durationMinutes <= end) {
+        const startH = Math.floor(current / 60).toString().padStart(2, '0');
+        const startM = (current % 60).toString().padStart(2, '0');
+        const endCurrent = current + durationMinutes;
+        const endH = Math.floor(endCurrent / 60).toString().padStart(2, '0');
+        const endM = (endCurrent % 60).toString().padStart(2, '0');
+
+        slots.push({
+          start: `${startH}:${startM}`,
+          end: `${endH}:${endM}`,
+        });
+
+        current += durationMinutes;
+      }
+
+      return slots;
+    }
+
+    function renderBookingForm() {
+      const container = document.getElementById('booking-form');
+
+      if (!selectedSlot) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const customFields = formFields.map(field => renderFormField(field)).join('');
+
+      const isShopify = typeof window.Shopify !== 'undefined';
+      const buttonText = isShopify ? t('addToCart') : t('bookNow');
+
+      container.innerHTML = `
+        <h3 class="section-title">${t('yourInfo')}</h3>
+        <form id="booking-form-element">
+          <div class="form-group">
+            <label class="form-label">${t('name')} <span class="required-mark">${t('required')}</span></label>
+            <input type="text" name="customer_name" class="form-input" placeholder="Mario Rossi" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">${t('email')} <span class="required-mark">${t('required')}</span></label>
+            <input type="email" name="customer_email" class="form-input" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">${t('phone')}</label>
+            <input type="tel" name="customer_phone" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">${t('numPeople')} <span class="required-mark">${t('required')}</span></label>
+            <input type="number" name="number_of_people" class="form-input" min="1" max="${selectedSlot.available}" value="1" required />
+          </div>
+
+          ${customFields}
+
+          <div class="form-group">
+            <label class="form-label">${t('notes')}</label>
+            <textarea name="notes" class="form-textarea"></textarea>
+          </div>
+
+          <div class="form-group" style="border-top: 1px solid #e5e5e5; padding-top: 24px; margin-top: 24px;">
+            <label class="checkbox-label" style="align-items: flex-start;">
+              <input
+                type="checkbox"
+                name="privacy_policy_accepted"
+                class="form-checkbox"
+                required
+                style="margin-top: 2px;"
+              />
+              <span style="flex: 1;">
+                ${t('privacyAccept')} <a href="https://www.spaceverbania.com/policies/privacy-policy" target="_blank" style="color: #1a1a1a; text-decoration: underline;">${t('privacyPolicy')}</a> <span class="required-mark">${t('required')}</span>
+              </span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">${t('marketingConsent')}</label>
+            <p style="font-size: 14px; color: #6b6b6b; margin-bottom: 12px;">${t('marketingQuestion')}</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <label class="checkbox-label" style="cursor: pointer;">
+                <input
+                  type="radio"
+                  name="marketing_consent"
+                  value="yes"
+                  class="form-checkbox"
+                  style="width: 18px; height: 18px;"
+                />
+                <span>${t('marketingYes')}</span>
+              </label>
+              <label class="checkbox-label" style="cursor: pointer;">
+                <input
+                  type="radio"
+                  name="marketing_consent"
+                  value="no"
+                  class="form-checkbox"
+                  checked
+                  style="width: 18px; height: 18px;"
+                />
+                <span>${t('marketingNo')}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" style="background: #f8f9fa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-top: 20px;">
+            <p style="font-size: 13px; color: #495057; line-height: 1.6; margin: 0;">
+              <strong>⚠️ ${t('waiver')}:</strong> ${t('waiverDisclaimer')} <a href="https://www.spaceverbania.com/pages/liberatoria-unica-it" target="_blank" style="color: #1a1a1a; text-decoration: underline; font-weight: 500;">${t('waiver')}</a>.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            class="booking-button"
+          >
+            ${buttonText}
+          </button>
+        </form>
+      `;
+
+      document.getElementById('booking-form-element').addEventListener('submit', handleBookingSubmit);
+    }
+
+    function renderFormField(field) {
+      const required = field.is_required ? '<span class="required-mark">*</span>' : '';
+      const requiredAttr = field.is_required ? 'required' : '';
+
+      switch (field.field_type) {
+        case 'textarea':
+          return `
+            <div class="form-group">
+              <label class="form-label">${field.field_label} ${required}</label>
+              <textarea
+                name="custom_${field.id}"
+                class="form-textarea"
+                placeholder="${field.placeholder || ''}"
+                ${requiredAttr}
+              ></textarea>
+            </div>
+          `;
+
+        case 'select':
+          const options = field.field_options?.select_options || [];
+          return `
+            <div class="form-group">
+              <label class="form-label">${field.field_label} ${required}</label>
+              <select name="custom_${field.id}" class="form-select" ${requiredAttr}>
+                <option value="">Select an option</option>
+                ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+              </select>
+            </div>
+          `;
+
+        case 'checkbox':
+          return `
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  name="custom_${field.id}"
+                  class="form-checkbox"
+                  value="yes"
+                  ${requiredAttr}
+                />
+                ${field.field_label} ${required}
+              </label>
+            </div>
+          `;
+
+        default:
+          return `
+            <div class="form-group">
+              <label class="form-label">${field.field_label} ${required}</label>
+              <input
+                type="${field.field_type}"
+                name="custom_${field.id}"
+                class="form-input"
+                placeholder="${field.placeholder || ''}"
+                ${requiredAttr}
+              />
+            </div>
+          `;
+      }
+    }
+
+    async function handleBookingSubmit(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      const marketingConsent = formData.get('marketing_consent') === 'yes';
+      const now = new Date().toISOString();
+
+      const bookingData = {
+        activity_id: activity.id,
+        variant_id: selectedVariant?.id || null,
+        booking_date: selectedDate,
+        start_time: selectedSlot.start,
+        end_time: selectedSlot.end,
+        customer_name: formData.get('customer_name'),
+        customer_email: formData.get('customer_email'),
+        customer_phone: formData.get('customer_phone') || null,
+        number_of_people: parseInt(formData.get('number_of_people')),
+        source: 'widget',
+        status: 'pending',
+        notes: formData.get('notes') || null,
+        privacy_policy_accepted: true,
+        privacy_policy_accepted_at: now,
+        marketing_consent: marketingConsent,
+        marketing_consent_at: marketingConsent ? now : null,
+        waiver_accepted: true,
+        waiver_accepted_at: now,
+        waiver_url: 'https://www.spaceverbania.com/pages/liberatoria-unica-it',
+      };
+
+      try {
+        const shopifyVariantId = selectedVariant?.shopify_variant_id || activity.shopify_variant_id;
+
+        if (shopifyVariantId && typeof window.Shopify !== 'undefined') {
+          const customResponses = {};
+          for (const field of formFields) {
+            const value = formData.get(`custom_${field.id}`);
+            if (value) {
+              customResponses[field.field_label] = value;
+            }
+          }
+
+          const cartItem = {
+            id: shopifyVariantId,
+            quantity: 1,
+            properties: {
+              'Booking Date': selectedDate,
+              'Booking Time': `${selectedSlot.start} - ${selectedSlot.end}`,
+              'Number of People': bookingData.number_of_people,
+              'Customer Name': bookingData.customer_name,
+              'Customer Email': bookingData.customer_email,
+              'Customer Phone': bookingData.customer_phone || '',
+              'Activity ID': activity.id,
+              'Variant ID': selectedVariant?.id || '',
+              'Notes': bookingData.notes || '',
+              'Privacy Policy Accepted': 'Yes',
+              'Marketing Consent': marketingConsent ? 'Yes' : 'No',
+              'Waiver Accepted': 'Yes',
+              ...customResponses
+            }
+          };
+
+          await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cartItem)
+          });
+
+          const msg = t('addedToCartMsg')
+            .replace('{activity}', activity.name)
+            .replace('{date}', selectedDate)
+            .replace('{time}', selectedSlot.start);
+
+          showSuccess(`
+            <h2>${t('addedToCart')}</h2>
+            <p>${msg}</p>
+            <p>${t('proceedCheckout')}</p>
+            <button onclick="window.location.href='/cart'" style="margin-top: 16px; padding: 16px 24px; background: #1a1a1a; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 16px;">${t('viewCart')}</button>
+          `);
+        } else {
+          const { data: booking, error } = await supabase
+            .from('bookings')
+            .insert([{ ...bookingData, status: 'confirmed' }])
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          const customResponses = [];
+          for (const field of formFields) {
+            const value = formData.get(`custom_${field.id}`);
+            if (value) {
+              customResponses.push({
+                booking_id: booking.id,
+                form_field_id: field.id,
+                response_value: value,
+              });
+            }
+          }
+
+          if (customResponses.length > 0) {
+            await supabase.from('booking_field_responses').insert(customResponses);
+          }
+
+          const msg = t('bookingConfirmedMsg')
+            .replace('{activity}', activity.name)
+            .replace('{date}', selectedDate)
+            .replace('{time}', selectedSlot.start);
+          const emailMsg = t('confirmationEmail').replace('{email}', bookingData.customer_email);
+
+          showSuccess(`
+            <h2>${t('bookingConfirmed')}</h2>
+            <p>${msg}</p>
+            <p>${emailMsg}</p>
+          `);
+        }
+      } catch (err) {
+        showError(t('bookingFailed'));
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
